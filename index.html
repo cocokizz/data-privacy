@@ -356,7 +356,7 @@
                 <div class="text-6xl text-sky-500">🎙️</div>
                 <div class="w-full">
                     <h3 class="font-bold text-slate-900" data-translate-key="podcastEpisodeTitle">Episode 1: Google und die DSGVO-Waage</h3>
-                    <audio controls class="w-full mt-4">
+                    <audio id="podcast-audio" controls class="w-full mt-4">
                         <source src="./Google and GDPR_ A Data Balancing Act.wav" type="audio/wav">
                         Your browser does not support the audio element.
                     </audio>
@@ -654,6 +654,17 @@
                 const videoId = lang === 'de' ? 'HKxcUdULzn4' : '0oZ6IpiS4U4';
                 videoIframe.src = `https://www.youtube.com/embed/${videoId}`;
             }
+            
+            // Update Podcast source
+            const audioPlayer = document.getElementById('podcast-audio');
+            if (audioPlayer) {
+                const audioSource = audioPlayer.querySelector('source');
+                const newSrc = lang === 'de' 
+                    ? './Google and GDPR_ A Data Balancing Act.wav' 
+                    : './Google-and-GDPR_ A-Data Balancing Act-englisch.wav';
+                audioSource.src = newSrc;
+                audioPlayer.load();
+            }
 
             createOrUpdateFinesChart(lang);
             initializePrinciples(); // Re-initialize to update titles etc.
@@ -789,4 +800,4 @@
         }
     </script>
 </body>
-</ht
+</html>
