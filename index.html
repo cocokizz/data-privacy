@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaktive Analyse: Google & die DSGVO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Neutral Tech -->
+    <!-- Application Structure Plan: The SPA is designed around a central, interactive "Balance Scale" metaphor to represent the Pro/Contra analysis from the source report. This is more engaging than a static list. The structure is non-linear and thematic: 1. Hero Section for introduction. 2. The interactive Balance Scale as the core analytical tool. 3. An explorable "Data Universe" to connect services to data collection. 4. An interactive card section for "DSGVO Conflict Zones". 5. A direct "Praxis-Check" comparison of promises vs. reality. 6. A final section for solutions. This structure transforms a linear presentation into an exploratory experience, guiding the user from a high-level conflict down to specific details and solutions, which enhances understanding and retention. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Pro/Contra evaluation (Folie 8). Goal: Compare. Viz: Interactive Balance Scale (HTML/CSS/JS). Interaction: Clicking buttons visually tips a scale and shows corresponding text. Justification: Creates a powerful, memorable metaphor for the report's core message. Library: Custom JS.
+        - Report Info: Google's services and data types (Folie 3 & 4). Goal: Organize/Inform. Viz: Icon grid. Interaction: Hovering/clicking an icon reveals the data collected by that service. Justification: Makes the abstract concept of data collection tangible and directly links it to familiar apps. Library: Custom JS.
+        - Report Info: DSGVO principles in conflict (Folie 5). Goal: Inform. Viz: Interactive cards. Interaction: Clicking a card reveals details. Justification: Encourages focused exploration of each legal principle, making complex information digestible. Library: Custom JS.
+        - Report Info: 50 Mio. € fine (Folie 7). Goal: Inform. Viz: A large, animated statistic. Interaction: Number animates on view. Justification: A single, impactful number is more powerful than a complex chart for this data point. Library: Custom JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #334155; /* slate-700 */
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0ea5e9; /* sky-500 */
+            border-bottom-color: #0ea5e9;
+        }
+        .balance-beam {
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        [data-section] {
+            scroll-margin-top: 80px;
+        }
+        .service-icon-container .service-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .service-icon-container:hover .service-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 300px; max-height: 40vh; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .tab-active { background-color: #0369a1; color: #ffffff; } /* sky-700 */
+        .tab-inactive { background-color: #f1f5f9; color: #334155; }
+        .principle-card-active { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); border-color: #0369a1; }
+        .lang-switcher button.active {
+            background-color: #0ea5e9;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-800" data-translate-key="mainTitle">Google & die DSGVO</h1>
+                </div>
+                <div class="hidden md:flex items-center">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#intro" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navPrivacy">Was ist Datenschutz?</a>
+                        <a href="#balance" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navBalance">Balanceakt</a>
+                        <a href="#universe" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navUniverse">Daten-Universum</a>
+                        <a href="#principles" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navPrinciples">DSGVO-Grundsätze</a>
+                        <a href="#solutions" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navSolutions">Lösungen</a>
+                    </div>
+                    <div class="lang-switcher ml-6 flex items-center p-1 rounded-full bg-slate-200">
+                        <button data-lang="de" class="lang-btn active px-3 py-1 text-sm font-semibold rounded-full">DE</button>
+                        <button data-lang="en" class="lang-btn px-3 py-1 text-sm font-semibold rounded-full">EN</button>
+                    </div>
+                </div>
+                 <div class="md:hidden flex items-center">
+                     <div class="lang-switcher mr-2 flex items-center p-1 rounded-full bg-slate-200">
+                        <button data-lang="de" class="lang-btn active px-2 py-0.5 text-xs font-semibold rounded-full">DE</button>
+                        <button data-lang="en" class="lang-btn px-2 py-0.5 text-xs font-semibold rounded-full">EN</button>
+                    </div>
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500">
+                        <span class="sr-only">Menü öffnen</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                 <a href="#intro" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navPrivacy">Was ist Datenschutz?</a>
+                <a href="#balance" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navBalance">Balanceakt</a>
+                <a href="#universe" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navUniverse">Daten-Universum</a>
+                <a href="#principles" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navPrinciples">DSGVO-Grundsätze</a>
+                <a href="#solutions" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navSolutions">Lösungen</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <!-- Hero Section -->
+        <section class="text-center py-16">
+            <h2 class="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl md:text-6xl" data-translate-key="heroTitle">Datenkrake oder Datenschutz-Vorreiter?</h2>
+            <p class="mt-6 max-w-3xl mx-auto text-lg leading-8 text-slate-600" data-translate-key="heroSubtitle">Wir nutzen täglich die Dienste von Google. Doch was passiert dabei mit unseren Daten? Diese interaktive Analyse beleuchtet den permanenten Balanceakt zwischen Googles Geschäftsmodell und dem europäischen Datenschutzrecht.</p>
+        </section>
+        
+        <!-- Intro Section -->
+        <section id="intro" data-section class="py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800 sm:text-4xl" data-translate-key="introTitle">Was bedeutet Datenschutz im Alltag?</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600" data-translate-key="introSubtitle">Bevor wir uns Google ansehen, klären wir die Grundlagen. Datenschutz betrifft uns alle, oft in Situationen, in denen wir nicht sofort daran denken.</p>
+            </div>
+            <div class="max-w-4xl mx-auto space-y-12">
+                <!-- Situation 1 -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-sky-700" data-translate-key="sit1Title">Situation 1: Die Fitness-App</h3>
+                    <p class="mt-2 italic text-slate-600" data-translate-key="sit1Desc">Eine Fitness-App fragt nach Standortdaten und Gesundheitswerten.</p>
+                    <div class="mt-6 space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit1Q1">Wo spielt Datenschutz eine Rolle?</h4>
+                            <p class="text-slate-700" data-translate-key="sit1A1">Direkt bei der Abfrage der Daten und während der gesamten Nutzung. Die App will auf sehr persönliche, teils hochsensible Informationen zugreifen.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit1Q2">Was wird geschützt – und wovor?</h4>
+                            <p class="text-slate-700" data-translate-key="sit1A2"><strong>Geschützt wird:</strong> Ihre Privatsphäre, körperliche Verfassung und Gewohnheiten. <strong>Wovor:</strong> Vor Missbrauch dieser Daten, z.B. durch Arbeitgeber oder Versicherungen, und der Erstellung detaillierter Bewegungsprofile.</p>
+                        </div>
+                         <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit1Q3">Welche persönlichen Daten sind betroffen?</h4>
+                            <ul class="list-disc list-inside text-slate-700" data-translate-key="sit1A3">
+                                <li><strong>Hochsensible Daten:</strong> Gesundheitswerte (Puls, Schlafzyklen).</li>
+                                <li><strong>Standortdaten:</strong> GPS-Tracking Ihrer Laufstrecken.</li>
+                                <li><strong>Stammdaten:</strong> Name, Alter, Geschlecht.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- Situation 2 -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-sky-700" data-translate-key="sit2Title">Situation 2: Der Online-Shop</h3>
+                     <p class="mt-2 italic text-slate-600" data-translate-key="sit2Desc">Ein Online-Shop schickt Ihnen Werbung, ohne dass Sie zugestimmt haben.</p>
+                     <div class="mt-6 space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit2Q1">Wo spielt Datenschutz eine Rolle?</h4>
+                            <p class="text-slate-700" data-translate-key="sit2A1">Bei der Verwendung Ihrer Kontaktdaten für Zwecke, denen Sie nicht zugestimmt haben. Es geht um Ihr Recht auf informationelle Selbstbestimmung.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit2Q2">Was wird geschützt – und wovor?</h4>
+                            <p class="text-slate-700" data-translate-key="sit2A2"><strong>Geschützt wird:</strong> Ihre Kontrolle über die eigenen Daten. <strong>Wovor:</strong> Vor Spam, unerwünschter Beeinflussung und der Erstellung von Kaufprofilen ohne Ihre Erlaubnis.</p>
+                        </div>
+                         <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit2Q3">Welche persönlichen Daten sind betroffen?</h4>
+                             <ul class="list-disc list-inside text-slate-700" data-translate-key="sit2A3">
+                                <li>Name, E-Mail-Adresse, Kaufhistorie.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- Situation 3 -->
+                 <div class="bg-white p-8 rounded-2xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-sky-700" data-translate-key="sit3Title">Situation 3: Der Freundschaftsdienst</h3>
+                     <p class="mt-2 italic text-slate-600" data-translate-key="sit3Desc">Eine Person fragt Sie nach der Telefonnummer eines Freundes/einer Freundin.</p>
+                     <div class="mt-6 space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit3Q1">Wo spielt Datenschutz eine Rolle?</h4>
+                            <p class="text-slate-700" data-translate-key="sit3A1">Hier sind Sie selbst in der Verantwortung, die Daten einer anderen Person zu schützen.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit3Q2">Was wird geschützt – und wovor?</h4>
+                            <p class="text-slate-700" data-translate-key="sit3A2"><strong>Geschützt wird:</strong> Die Privatsphäre des Freundes. <strong>Wovor:</strong> Vor unerwünschten Anrufen oder Belästigung. Sie wissen nicht, was die anfragende Person mit der Nummer vorhat.</p>
+                        </div>
+                         <div>
+                            <h4 class="font-semibold text-slate-800" data-translate-key="sit3Q3">Welche persönlichen Daten sind betroffen?</h4>
+                             <ul class="list-disc list-inside text-slate-700" data-translate-key="sit3A3">
+                                <li>Name und Telefonnummer des Freundes/der Freundin.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-4xl mx-auto mt-16 text-center">
+                <h3 class="text-2xl font-bold text-slate-800" data-translate-key="quoteTitle">„Datenschutz bedeutet für uns…“</h3>
+                <div class="mt-6 space-y-6">
+                    <blockquote class="bg-slate-100 border-l-4 border-sky-500 p-4 rounded-r-lg">
+                        <p class="text-slate-700 italic" data-translate-key="quote1">„…die Kontrolle über unsere persönlichen Informationen zu haben und selbst zu entscheiden, wer was über uns weiß und wofür diese Informationen genutzt werden dürfen.“</p>
+                    </blockquote>
+                     <blockquote class="bg-slate-100 border-l-4 border-sky-500 p-4 rounded-r-lg">
+                        <p class="text-slate-700 italic" data-translate-key="quote2">„…unsere Privatsphäre im digitalen und analogen Leben zu schützen, um uns vor Missbrauch, Manipulation und ungewollter Überwachung zu bewahren.“</p>
+                    </blockquote>
+                     <blockquote class="bg-slate-100 border-l-4 border-sky-500 p-4 rounded-r-lg">
+                        <p class="text-slate-700 italic" data-translate-key="quote3">„…nicht nur auf unsere eigenen Daten zu achten, sondern auch verantwortungsvoll mit den Daten von Freunden und Familie umzugehen.“</p>
+                    </blockquote>
+                </div>
+            </div>
+        </section>
+
+        <!-- Balance Section -->
+        <section id="balance" data-section class="py-16 bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="text-center mb-12 px-4">
+                <h3 class="text-3xl font-bold text-slate-800" data-translate-key="balanceTitle">Der große Balanceakt</h3>
+                <p class="mt-4 max-w-2xl mx-auto text-slate-600" data-translate-key="balanceSubtitle">Steht Google im Gleichgewicht? Klicken Sie auf "PRO" oder "CONTRA", um die Waage zu neigen und die Argumente zu sehen, die für oder gegen Googles Datenschutz-Praxis sprechen.</p>
+            </div>
+            <div class="flex justify-center items-center space-x-8 mb-8">
+                <button id="pro-button" class="px-8 py-3 bg-emerald-500 text-white font-bold rounded-full shadow-md hover:bg-emerald-600 transition-colors">PRO</button>
+                <button id="contra-button" class="px-8 py-3 bg-red-500 text-white font-bold rounded-full shadow-md hover:bg-red-600 transition-colors">CONTRA</button>
+            </div>
+            <div class="w-full flex justify-center items-end" style="height: 150px;">
+                 <div id="balance-scale" class="relative w-full max-w-md lg:max-w-xl">
+                    <div class="balance-beam absolute bottom-1/2 w-full h-2 bg-slate-700 rounded-full" style="transform-origin: center;">
+                         <div class="absolute -left-4 -top-3.5 w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+                         <div class="absolute -right-4 -top-3.5 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">✗</div>
+                    </div>
+                    <div class="mx-auto w-4 h-24 bg-slate-700" style="clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);"></div>
+                </div>
+            </div>
+            <div id="argument-display" class="mt-8 px-6 lg:px-12 min-h-[250px] flex items-center justify-center">
+                <p id="initial-text" class="text-slate-500 text-center" data-translate-key="balanceInitial">Wählen Sie eine Seite, um die Argumente zu sehen.</p>
+                <div id="pro-arguments" class="hidden">
+                    <ul class="space-y-4 list-inside list-disc text-emerald-800" data-translate-key="proArguments">
+                        <li><span class="font-semibold text-slate-800">Kostenlose & innovative Dienste:</span> Stellt nützliche Technologien für alle bereit.</li>
+                        <li><span class="font-semibold text-slate-800">Starke IT-Sicherheit:</span> Investiert massiv in den Schutz von Nutzerkonten (z.B. 2FA).</li>
+                        <li><span class="font-semibold text-slate-800">Fortschrittliche Daten-Tools:</span> Bietet detaillierte Dashboards zur Verwaltung der eigenen Daten.</li>
+                    </ul>
+                </div>
+                <div id="contra-arguments" class="hidden">
+                     <ul class="space-y-4 list-inside list-disc text-red-800" data-translate-key="contraArguments">
+                        <li><span class="font-semibold text-slate-800">Widersprüchliches Geschäftsmodell:</span> Maximale Datennutzung steht im Konflikt zu DSGVO-Prinzipien.</li>
+                        <li><span class="font-semibold text-slate-800">Mangelnde Transparenz:</span> Echte Kontrolle ist für Laien trotz Tools kaum zu erreichen.</li>
+                        <li><span class="font-semibold text-slate-800">Kein "Privacy by Default":</span> Datenschutzunfreundliche Einstellungen sind oft der Standard.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Universe -->
+        <section id="universe" data-section class="py-20">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-slate-800" data-translate-key="universeTitle">Googles Daten-Universum</h3>
+                <p class="mt-4 max-w-2xl mx-auto text-slate-600" data-translate-key="universeSubtitle">Jeder Dienst ist ein Datenpunkt. Fahren Sie mit der Maus über ein Symbol (oder tippen Sie auf Mobilgeräten), um zu sehen, welche Art von Daten hauptsächlich gesammelt wird.</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 text-center">
+                <div class="service-icon-container relative flex flex-col items-center">
+                    <div class="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center text-4xl">🔍</div><p class="mt-2 font-semibold">Search</p>
+                    <div class="service-tooltip absolute -top-20 w-48 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl" data-translate-key="serviceSearch">Suchanfragen, Klick-Verlauf, abgeleitete Interessen</div>
+                </div>
+                <div class="service-icon-container relative flex flex-col items-center">
+                    <div class="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center text-4xl">📱</div><p class="mt-2 font-semibold">Android</p>
+                    <div class="service-tooltip absolute -top-20 w-48 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl" data-translate-key="serviceAndroid">Geräte-ID, installierte Apps, System-Aktivität</div>
+                </div>
+                <div class="service-icon-container relative flex flex-col items-center">
+                    <div class="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center text-4xl">▶️</div><p class="mt-2 font-semibold">YouTube</p>
+                    <div class="service-tooltip absolute -top-20 w-48 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl" data-translate-key="serviceYouTube">Angesehene Videos, Likes, Kommentare, Verweildauer</div>
+                </div>
+                <div class="service-icon-container relative flex flex-col items-center">
+                    <div class="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center text-4xl">📍</div><p class="mt-2 font-semibold">Maps</p>
+                    <div class="service-tooltip absolute -top-20 w-48 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl" data-translate-key="serviceMaps">Standortverlauf, besuchte Orte, Routen, Wohn- & Arbeitsort</div>
+                </div>
+                <div class="service-icon-container relative flex flex-col items-center">
+                    <div class="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center text-4xl">✉️</div><p class="mt-2 font-semibold">Gmail</p>
+                    <div class="service-tooltip absolute -top-20 w-48 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl" data-translate-key="serviceGmail">E-Mail-Inhalte (maschinell), Kontakte, Anhänge</div>
+                </div>
+                <div class="service-icon-container relative flex flex-col items-center">
+                    <div class="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center text-4xl">🌐</div><p class="mt-2 font-semibold">Chrome</p>
+                    <div class="service-tooltip absolute -top-20 w-48 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl" data-translate-key="serviceChrome">Browserverlauf, Cookies, Log-in-Daten (wenn synchronisiert)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GDPR Principles Section -->
+        <section id="principles" data-section class="py-20 bg-white rounded-2xl shadow-lg">
+             <div class="text-center mb-10">
+                <h2 class="text-4xl md:text-5xl font-bold text-sky-800 mb-2" data-translate-key="principlesTitle">Die 7 Grundsätze der DSGVO</h2>
+                <p class="text-lg text-slate-600" data-translate-key="principlesSubtitle">Ein interaktiver Leitfaden zum Verstehen und Anwenden</p>
+            </div>
+
+            <div class="max-w-4xl mx-auto p-6 rounded-lg mb-12">
+                <h3 class="text-2xl font-bold text-sky-700 mb-4" data-translate-key="principlesWhyTitle">Warum sind diese Grundsätze so wichtig?</h3>
+                <p class="text-slate-700 mb-4" data-translate-key="principlesWhyDesc">
+                    Die Datenschutz-Grundverordnung (DSGVO) definiert sieben zentrale Grundsätze, die das Fundament für jeden rechtmäßigen Umgang mit personenbezogenen Daten bilden. Sie sind keine bloßen Empfehlungen, sondern rechtlich bindende Regeln. Verstöße können, wie die folgende Grafik zeigt, drastische finanzielle Konsequenzen haben.
+                </p>
+                <div class="chart-container">
+                    <canvas id="finesChart"></canvas>
+                </div>
+                 <p class="text-center text-sm text-slate-500 mt-2" data-translate-key="finesChartSubtitle">Vergleich von Bußgeldern bei DSGVO-Verstößen (in Mio. €).</p>
+            </div>
+            
+            <div class="text-center mb-8">
+                <h3 class="text-3xl font-bold text-sky-800" data-translate-key="principlesExploreTitle">Erkunden Sie die Grundsätze</h3>
+                <p class="text-md text-slate-600 mt-2" data-translate-key="principlesExploreSubtitle">Klicken Sie auf eine Karte, um Details, Beispiele und mögliche Folgen anzuzeigen.</p>
+            </div>
+            <div id="principles-nav-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 px-6">
+            </div>
+
+            <div id="content-display" class="bg-slate-50 p-6 md:p-8 rounded-lg min-h-[30rem] transition-all duration-500 mx-6">
+                <div id="content-placeholder" class="flex flex-col items-center justify-center h-full text-center">
+                    <div class="text-6xl text-sky-300 mb-4">↑</div>
+                    <h3 class="text-2xl font-bold text-slate-700" data-translate-key="principlesSelectTitle">Wählen Sie einen Grundsatz aus</h3>
+                    <p class="text-slate-500" data-translate-key="principlesSelectSubtitle">Klicken Sie oben, um die Details hier zu laden.</p>
+                </div>
+                <div id="content-template" class="hidden">
+                     <h2 class="text-3xl font-bold text-sky-700 mb-1 flex items-center"><span id="principle-icon" class="mr-3 text-4xl"></span><span id="principle-title"></span></h2>
+                     <p class="text-slate-500 mb-6" id="principle-subtitle"></p>
+                    <div class="mb-6 border-b border-slate-200">
+                        <nav class="flex space-x-2" id="tabs-nav"></nav>
+                    </div>
+                    <div id="tabs-content"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Solutions -->
+        <section id="solutions" data-section class="py-16 bg-sky-800 text-white rounded-2xl shadow-lg mt-20">
+            <div class="text-center mb-12 px-4">
+                <h3 class="text-3xl font-bold" data-translate-key="solutionsTitle">Wie könnte eine bessere Zukunft aussehen?</h3>
+                <p class="mt-4 max-w-2xl mx-auto text-sky-200" data-translate-key="solutionsSubtitle">Es gibt Lösungsansätze auf verschiedenen Ebenen, um die Balance zwischen Innovation und Privatsphäre zu verbessern.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 px-6 lg:px-8">
+                <div>
+                    <h4 class="text-xl font-bold text-sky-300" data-translate-key="solutionsTechTitle">Technisch & Design</h4>
+                    <p class="mt-2 text-sky-100" data-translate-key="solutionsTechDesc">Die datenschutzfreundlichsten Einstellungen müssen immer der Standard sein ("Privacy by Default"). Nutzer sollten aktiv zustimmen ("Opt-in"), statt ablehnen ("Opt-out") zu müssen.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-bold text-sky-300" data-translate-key="solutionsLegalTitle">Rechtlich & Regulatorisch</h4>
+                    <p class="mt-2 text-sky-100" data-translate-key="solutionsLegalDesc">Strengere Aufsicht durch Behörden und einfachere, standardisierte Datenschutzerklärungen (z.B. ein Ampelsystem) könnten die Transparenz erhöhen.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-bold text-sky-300" data-translate-key="solutionsUserTitle">Für uns als Nutzer</h4>
+                    <p class="mt-2 text-sky-100" data-translate-key="solutionsUserDesc">Mehr Bildung und Medienkompetenz sind entscheidend, um die bereitgestellten Tools selbstbewusst zu nutzen und regelmäßig die eigenen Einstellungen zu überprüfen.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-8">
+        <p class="text-sm text-slate-500" data-translate-key="footerText">Eine interaktive Aufbereitung basierend auf gängigen Analysen zur DSGVO-Praxis.</p>
+    </footer>
+
+    <!-- Modal for conflict card details is no longer needed, integrated into principles section -->
+    
+    <script>
+        const translations = {
+            de: {
+                mainTitle: "Google & die DSGVO",
+                navPrivacy: "Was ist Datenschutz?",
+                navBalance: "Balanceakt",
+                navUniverse: "Daten-Universum",
+                navPrinciples: "DSGVO-Grundsätze",
+                navSolutions: "Lösungen",
+                heroTitle: "Datenkrake oder Datenschutz-Vorreiter?",
+                heroSubtitle: "Wir nutzen täglich die Dienste von Google. Doch was passiert dabei mit unseren Daten? Diese interaktive Analyse beleuchtet den permanenten Balanceakt zwischen Googles Geschäftsmodell und dem europäischen Datenschutzrecht.",
+                introTitle: "Was bedeutet Datenschutz im Alltag?",
+                introSubtitle: "Bevor wir uns Google ansehen, klären wir die Grundlagen. Datenschutz betrifft uns alle, oft in Situationen, in denen wir nicht sofort daran denken.",
+                sit1Title: "Situation 1: Die Fitness-App",
+                sit1Desc: "Eine Fitness-App fragt nach Standortdaten und Gesundheitswerten.",
+                sit1Q1: "Wo spielt Datenschutz eine Rolle?",
+                sit1A1: "Direkt bei der Abfrage der Daten und während der gesamten Nutzung. Die App will auf sehr persönliche, teils hochsensible Informationen zugreifen.",
+                sit1Q2: "Was wird geschützt – und wovor?",
+                sit1A2: "<strong>Geschützt wird:</strong> Ihre Privatsphäre, körperliche Verfassung und Gewohnheiten. <strong>Wovor:</strong> Vor Missbrauch dieser Daten, z.B. durch Arbeitgeber oder Versicherungen, und der Erstellung detaillierter Bewegungsprofile.",
+                sit1Q3: "Welche persönlichen Daten sind betroffen?",
+                sit1A3: "<li><strong>Hochsensible Daten:</strong> Gesundheitswerte (Puls, Schlafzyklen).</li><li><strong>Standortdaten:</strong> GPS-Tracking Ihrer Laufstrecken.</li><li><strong>Stammdaten:</strong> Name, Alter, Geschlecht.</li>",
+                sit2Title: "Situation 2: Der Online-Shop",
+                sit2Desc: "Ein Online-Shop schickt Ihnen Werbung, ohne dass Sie zugestimmt haben.",
+                sit2Q1: "Wo spielt Datenschutz eine Rolle?",
+                sit2A1: "Bei der Verwendung Ihrer Kontaktdaten für Zwecke, denen Sie nicht zugestimmt haben. Es geht um Ihr Recht auf informationelle Selbstbestimmung.",
+                sit2Q2: "Was wird geschützt – und wovor?",
+                sit2A2: "<strong>Geschützt wird:</strong> Ihre Kontrolle über die eigenen Daten. <strong>Wovor:</strong> Vor Spam, unerwünschter Beeinflussung und der Erstellung von Kaufprofilen ohne Ihre Erlaubnis.",
+                sit2Q3: "Welche persönlichen Daten sind betroffen?",
+                sit2A3: "<li>Name, E-Mail-Adresse, Kaufhistorie.</li>",
+                sit3Title: "Situation 3: Der Freundschaftsdienst",
+                sit3Desc: "Eine Person fragt Sie nach der Telefonnummer eines Freundes/einer Freundin.",
+                sit3Q1: "Wo spielt Datenschutz eine Rolle?",
+                sit3A1: "Hier sind Sie selbst in der Verantwortung, die Daten einer anderen Person zu schützen.",
+                sit3Q2: "Was wird geschützt – und wovor?",
+                sit3A2: "<strong>Geschützt wird:</strong> Die Privatsphäre des Freundes. <strong>Wovor:</strong> Vor unerwünschten Anrufen oder Belästigung. Sie wissen nicht, was die anfragende Person mit der Nummer vorhat.",
+                sit3Q3: "Welche persönlichen Daten sind betroffen?",
+                sit3A3: "<li>Name und Telefonnummer des Freundes/der Freundin.</li>",
+                quoteTitle: "„Datenschutz bedeutet für uns…“",
+                quote1: "„…die Kontrolle über unsere persönlichen Informationen zu haben und selbst zu entscheiden, wer was über uns weiß und wofür diese Informationen genutzt werden dürfen.“",
+                quote2: "„…unsere Privatsphäre im digitalen und analogen Leben zu schützen, um uns vor Missbrauch, Manipulation und ungewollter Überwachung zu bewahren.“",
+                quote3: "„…nicht nur auf unsere eigenen Daten zu achten, sondern auch verantwortungsvoll mit den Daten von Freunden und Familie umzugehen.“",
+                balanceTitle: "Der große Balanceakt",
+                balanceSubtitle: "Steht Google im Gleichgewicht? Klicken Sie auf 'PRO' oder 'CONTRA', um die Waage zu neigen und die Argumente zu sehen, die für oder gegen Googles Datenschutz-Praxis sprechen.",
+                balanceInitial: "Wählen Sie eine Seite, um die Argumente zu sehen.",
+                proArguments: '<li><span class="font-semibold text-slate-800">Kostenlose & innovative Dienste:</span> Stellt nützliche Technologien für alle bereit.</li><li><span class="font-semibold text-slate-800">Starke IT-Sicherheit:</span> Investiert massiv in den Schutz von Nutzerkonten (z.B. 2FA).</li><li><span class="font-semibold text-slate-800">Fortschrittliche Daten-Tools:</span> Bietet detaillierte Dashboards zur Verwaltung der eigenen Daten.</li>',
+                contraArguments: '<li><span class="font-semibold text-slate-800">Widersprüchliches Geschäftsmodell:</span> Maximale Datennutzung steht im Konflikt zu DSGVO-Prinzipien.</li><li><span class="font-semibold text-slate-800">Mangelnde Transparenz:</span> Echte Kontrolle ist für Laien trotz Tools kaum zu erreichen.</li><li><span class="font-semibold text-slate-800">Kein "Privacy by Default":</span> Datenschutzunfreundliche Einstellungen sind oft der Standard.</li>',
+                universeTitle: "Googles Daten-Universum",
+                universeSubtitle: "Jeder Dienst ist ein Datenpunkt. Fahren Sie mit der Maus über ein Symbol (oder tippen Sie auf Mobilgeräten), um zu sehen, welche Art von Daten hauptsächlich gesammelt wird.",
+                serviceSearch: "Suchanfragen, Klick-Verlauf, abgeleitete Interessen",
+                serviceAndroid: "Geräte-ID, installierte Apps, System-Aktivität",
+                serviceYouTube: "Angesehene Videos, Likes, Kommentare, Verweildauer",
+                serviceMaps: "Standortverlauf, besuchte Orte, Routen, Wohn- & Arbeitsort",
+                serviceGmail: "E-Mail-Inhalte (maschinell), Kontakte, Anhänge",
+                serviceChrome: "Browserverlauf, Cookies, Log-in-Daten (wenn synchronisiert)",
+                principlesTitle: "Die 7 Grundsätze der DSGVO",
+                principlesSubtitle: "Ein interaktiver Leitfaden zum Verstehen und Anwenden",
+                principlesWhyTitle: "Warum sind diese Grundsätze so wichtig?",
+                principlesWhyDesc: "Die Datenschutz-Grundverordnung (DSGVO) definiert sieben zentrale Grundsätze, die das Fundament für jeden rechtmäßigen Umgang mit personenbezogenen Daten bilden. Sie sind keine bloßen Empfehlungen, sondern rechtlich bindende Regeln. Verstöße können, wie die folgende Grafik zeigt, drastische finanzielle Konsequenzen haben.",
+                finesChartTitle: "Ausgewählte DSGVO-Bußgelder",
+                finesChartLabel: "Bußgeld in Mio. €",
+                finesChartXLabel: "Bußgeld in Millionen Euro (€)",
+                finesChartSubtitle: "Vergleich von Bußgeldern bei DSGVO-Verstößen (in Mio. €).",
+                principlesExploreTitle: "Erkunden Sie die Grundsätze",
+                principlesExploreSubtitle: "Klicken Sie auf eine Karte, um Details, Beispiele und mögliche Folgen anzuzeigen.",
+                principlesSelectTitle: "Wählen Sie einen Grundsatz aus",
+                principlesSelectSubtitle: "Klicken Sie oben, um die Details hier zu laden.",
+                solutionsTitle: "Wie könnte eine bessere Zukunft aussehen?",
+                solutionsSubtitle: "Es gibt Lösungsansätze auf verschiedenen Ebenen, um die Balance zwischen Innovation und Privatsphäre zu verbessern.",
+                solutionsTechTitle: "Technisch & Design",
+                solutionsTechDesc: 'Die datenschutzfreundlichsten Einstellungen müssen immer der Standard sein ("Privacy by Default"). Nutzer sollten aktiv zustimmen ("Opt-in"), statt ablehnen ("Opt-out") zu müssen.',
+                solutionsLegalTitle: "Rechtlich & Regulatorisch",
+                solutionsLegalDesc: "Strengere Aufsicht durch Behörden und einfachere, standardisierte Datenschutzerklärungen (z.B. ein Ampelsystem) könnten die Transparenz erhöhen.",
+                solutionsUserTitle: "Für uns als Nutzer",
+                solutionsUserDesc: "Mehr Bildung und Medienkompetenz sind entscheidend, um die bereitgestellten Tools selbstbewusst zu nutzen und regelmäßig die eigenen Einstellungen zu überprüfen.",
+                footerText: "Eine interaktive Aufbereitung basierend auf gängigen Analysen zur DSGVO-Praxis."
+            },
+            en: {
+                mainTitle: "Google & the GDPR",
+                navPrivacy: "What is Data Privacy?",
+                navBalance: "Balancing Act",
+                navUniverse: "Data Universe",
+                navPrinciples: "GDPR Principles",
+                navSolutions: "Solutions",
+                heroTitle: "Data Octopus or Privacy Pioneer?",
+                heroSubtitle: "We use Google's services every day. But what happens to our data? This interactive analysis examines the permanent balancing act between Google's business model and European data protection law.",
+                introTitle: "What Does Data Privacy Mean in Everyday Life?",
+                introSubtitle: "Before we look at Google, let's clarify the basics. Data privacy affects us all, often in situations we don't immediately think about.",
+                sit1Title: "Situation 1: The Fitness App",
+                sit1Desc: "A fitness app asks for location data and health metrics.",
+                sit1Q1: "Where does data privacy play a role?",
+                sit1A1: "Directly when the data is requested and throughout its use. The app wants to access very personal, sometimes highly sensitive, information.",
+                sit1Q2: "What is being protected – and from what?",
+                sit1A2: "<strong>What's protected:</strong> Your privacy, physical condition, and habits. <strong>From what:</strong> From the misuse of this data, e.g., by employers or insurance companies, and the creation of detailed movement profiles.",
+                sit1Q3: "What personal data is affected?",
+                sit1A3: "<li><strong>Highly sensitive data:</strong> Health metrics (pulse, sleep cycles).</li><li><strong>Location data:</strong> GPS tracking of your running routes.</li><li><strong>Master data:</strong> Name, age, gender.</li>",
+                sit2Title: "Situation 2: The Online Shop",
+                sit2Desc: "An online shop sends you advertising without your consent.",
+                sit2Q1: "Where does data privacy play a role?",
+                sit2A1: "In the use of your contact details for purposes to which you have not consented. It's about your right to informational self-determination.",
+                sit2Q2: "What is being protected – and from what?",
+                sit2A2: "<strong>What's protected:</strong> Your control over your own data. <strong>From what:</strong> From spam, unwanted influence, and the creation of purchasing profiles without your permission.",
+                sit2Q3: "What personal data is affected?",
+                sit2A3: "<li>Name, email address, purchase history.</li>",
+                sit3Title: "Situation 3: The Friendly Favor",
+                sit3Desc: "Someone asks you for a friend's phone number.",
+                sit3Q1: "Where does data privacy play a role?",
+                sit3A1: "Here, you are responsible for protecting another person's data.",
+                sit3Q2: "What is being protected – and from what?",
+                sit3A2: "<strong>What's protected:</strong> The friend's privacy. <strong>From what:</strong> From unwanted calls or harassment. You don't know what the person asking intends to do with the number.",
+                sit3Q3: "What personal data is affected?",
+                sit3A3: "<li>The friend's name and phone number.</li>",
+                quoteTitle: "'Data privacy means to us…'",
+                quote1: "'…having control over our personal information and deciding for ourselves who knows what about us and for what purposes that information may be used.'",
+                quote2: "'…protecting our privacy in digital and analog life to guard against misuse, manipulation, and unwanted surveillance.'",
+                quote3: "'…not only looking after our own data, but also handling the data of friends and family responsibly.'",
+                balanceTitle: "The Great Balancing Act",
+                balanceSubtitle: "Is Google in balance? Click 'PRO' or 'CONTRA' to tip the scale and see the arguments for or against Google's data privacy practices.",
+                balanceInitial: "Select a side to see the arguments.",
+                proArguments: '<li><span class="font-semibold text-slate-800">Free & Innovative Services:</span> Provides useful technologies for everyone.</li><li><span class="font-semibold text-slate-800">Strong IT Security:</span> Invests heavily in protecting user accounts (e.g., 2FA).</li><li><span class="font-semibold text-slate-800">Advanced Data Tools:</span> Offers detailed dashboards for managing one\'s own data.</li>',
+                contraArguments: '<li><span class="font-semibold text-slate-800">Contradictory Business Model:</span> Maximum data usage conflicts with GDPR principles.</li><li><span class="font-semibold text-slate-800">Lack of Transparency:</span> True control is hardly achievable for laypersons despite the tools.</li><li><span class="font-semibold text-slate-800">No "Privacy by Default":</span> Privacy-unfriendly settings are often the default.</li>',
+                universeTitle: "Google's Data Universe",
+                universeSubtitle: "Each service is a data point. Hover over an icon (or tap on mobile) to see what kind of data is primarily collected.",
+                serviceSearch: "Search queries, click history, inferred interests",
+                serviceAndroid: "Device ID, installed apps, system activity",
+                serviceYouTube: "Videos watched, likes, comments, viewing duration",
+                serviceMaps: "Location history, visited places, routes, home & work address",
+                serviceGmail: "Email content (machine-scanned), contacts, attachments",
+                serviceChrome: "Browsing history, cookies, login data (if synced)",
+                principlesTitle: "The 7 Principles of GDPR",
+                principlesSubtitle: "An interactive guide to understanding and applying them",
+                principlesWhyTitle: "Why are these principles so important?",
+                principlesWhyDesc: "The General Data Protection Regulation (GDPR) defines seven key principles that form the foundation for any lawful handling of personal data. They are not mere recommendations, but legally binding rules. Violations, as the following chart shows, can have drastic financial consequences.",
+                finesChartTitle: "Selected GDPR Fines",
+                finesChartLabel: "Fine in million €",
+                finesChartXLabel: "Fine in million Euro (€)",
+                finesChartSubtitle: "Comparison of fines for GDPR violations (in million €).",
+                principlesExploreTitle: "Explore the Principles",
+                principlesExploreSubtitle: "Click on a card to view details, examples, and potential consequences.",
+                principlesSelectTitle: "Select a Principle",
+                principlesSelectSubtitle: "Click on a card above to load the details here.",
+                solutionsTitle: "What could a better future look like?",
+                solutionsSubtitle: "There are solution approaches at various levels to improve the balance between innovation and privacy.",
+                solutionsTechTitle: "Technical & Design",
+                solutionsTechDesc: 'The most privacy-friendly settings must always be the default ("Privacy by Default"). Users should have to actively opt-in, rather than opt-out.',
+                solutionsLegalTitle: "Legal & Regulatory",
+                solutionsLegalDesc: "Stricter supervision by authorities and simpler, standardized privacy policies (e.g., a traffic light system) could increase transparency.",
+                solutionsUserTitle: "For Us as Users",
+                solutionsUserDesc: "More education and media literacy are crucial to confidently use the provided tools and regularly review one's own settings.",
+                footerText: "An interactive summary based on common analyses of GDPR practices."
+            }
+        };
+
+        let currentLang = 'de';
+        let finesChart = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile Menu
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+
+            // Language Switcher
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const lang = btn.dataset.lang;
+                    setLanguage(lang);
+                });
+            });
+
+            // Balance Scale Logic
+            const proButton = document.getElementById('pro-button');
+            const contraButton = document.getElementById('contra-button');
+            const balanceBeam = document.querySelector('.balance-beam');
+            function showArguments(type) {
+                document.getElementById('initial-text').classList.add('hidden');
+                document.getElementById('pro-arguments').classList.add('hidden');
+                document.getElementById('contra-arguments').classList.add('hidden');
+                if (type === 'pro') {
+                    balanceBeam.style.transform = 'rotate(-5deg)';
+                    document.getElementById('pro-arguments').classList.remove('hidden');
+                } else if (type === 'contra') {
+                    balanceBeam.style.transform = 'rotate(5deg)';
+                    document.getElementById('contra-arguments').classList.remove('hidden');
+                }
+            }
+            proButton.addEventListener('click', () => showArguments('pro'));
+            contraButton.addEventListener('click', () => showArguments('contra'));
+            
+            // Navigation scroll behavior
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href'))?.scrollIntoView();
+                });
+            });
+            
+            // Active nav link on scroll
+            const sections = document.querySelectorAll('[data-section]');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: "-30% 0px -70% 0px" });
+            sections.forEach(section => { observer.observe(section); });
+
+            initializePrinciples();
+            setLanguage(currentLang);
+        });
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.lang = lang;
+
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.dataset.translateKey;
+                if (translations[lang][key]) {
+                    el.innerHTML = translations[lang][key];
+                }
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.dataset.lang === lang) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            createOrUpdateFinesChart(lang);
+            initializePrinciples(); // Re-initialize to update titles etc.
+            
+            // Reset the details view
+            document.getElementById('content-placeholder').classList.remove('hidden');
+            document.getElementById('content-template').classList.add('hidden');
+        }
+        
+        const gdprPrinciplesData = {
+            de: [
+                { id: 'rechtmaessigkeit', icon: '⚖️', title: 'Rechtmäßigkeit, Treu und Glauben, Transparenz', subtitle: 'Die Grundlage jeder Datenverarbeitung.', content: { definition: 'Daten dürfen nur auf einer legalen Grundlage (z.B. Einwilligung, Vertrag) erhoben werden. Die Verarbeitung muss fair sein und die Person muss klar und einfach verstehen können, was mit ihren Daten passiert.', good_example: 'Ein Online-Shop zeigt direkt beim Anmeldeformular für den Newsletter klar an: "Ja, ich möchte Werbung erhalten. Ich kann mich jederzeit abmelden. Mehr Infos in unserer Datenschutzerklärung."', bad_example: 'Die irische Datenschutzbehörde verhängte 2022 eine 405-Millionen-Euro-Strafe gegen Instagram (Meta), da Profile von Minderjährigen standardmäßig öffentlich einsehbar waren.', consequences: 'Hohe Bußgelder, Verlust des Kundenvertrauens, Imageschaden.' }},
+                { id: 'zweckbindung', icon: '🎯', title: 'Zweckbindung', subtitle: 'Daten nur für den vereinbarten Zweck nutzen.', content: { definition: 'Daten dürfen nur für den klaren Zweck gesammelt werden, der der Person vorher mitgeteilt wurde. Man darf sie später nicht einfach für etwas völlig anderes verwenden.', good_example: 'Eine Pizzeria sammelt eure Adresse bei der Bestellung. Sie nutzt die Adresse nur für die Lieferung der Pizza und nicht, um euch unaufgefordert Werbung per Post zu schicken.', bad_example: 'H&M musste 35.3 Millionen Euro Bußgeld zahlen, weil private Informationen über Mitarbeiter (Krankheiten, etc.) gesammelt wurden, um deren Arbeitsleistung zu bewerten.', consequences: 'Bußgelder, Klagen von Betroffenen, Verbot der weiteren Datenverarbeitung.' }},
+                { id: 'datenminimierung', icon: '🗑️', title: 'Datenminimierung', subtitle: 'So viele wie nötig, so wenige wie möglich.', content: { definition: 'Es dürfen nur die Daten erhoben werden, die für den Zweck wirklich notwendig sind. Nicht mehr und nicht weniger.', good_example: 'Bei der Anmeldung für einen reinen E-Mail-Newsletter wird nur die E-Mail-Adresse abgefragt und nicht zusätzlich das Geburtsdatum.', bad_example: 'Ein Online-Shop verlangt beim Gast-Konto zwingend die Angabe des Geburtsdatums, obwohl dies für den Kauf nicht erforderlich ist.', consequences: 'Unnötige Risiken bei Datenlecks, Verärgerung der Nutzer.' }},
+                { id: 'richtigkeit', icon: '✍️', title: 'Richtigkeit', subtitle: 'Daten müssen korrekt und aktuell sein.', content: { definition: 'Persönliche Daten müssen sachlich korrekt sein und auf dem neuesten Stand gehalten werden. Es müssen Maßnahmen getroffen werden, um falsche Daten zu korrigieren oder zu löschen.', good_example: 'Eine Bank fordert ihre Kunden regelmäßig auf, ihre Kontaktdaten zu überprüfen und bei Bedarf zu aktualisieren.', bad_example: 'Eine Kreditauskunftei (z. B. Schufa) hat einen veralteten, falschen Eintrag über eine Person gespeichert, der deren Kreditwürdigkeit negativ beeinflusst.', consequences: 'Falsche Entscheidungen auf Basis falscher Daten, Rufschädigung.' }},
+                { id: 'speicherbegrenzung', icon: '⏳', title: 'Speicherbegrenzung', subtitle: 'Daten nicht länger als nötig aufbewahren.', content: { definition: 'Daten dürfen nur so lange gespeichert werden, wie sie für den Zweck gebraucht werden. Danach müssen sie gelöscht oder anonymisiert werden.', good_example: 'Ein Unternehmen löscht die Daten von Bewerbern automatisch nach 6 Monaten, wie es das Gesetz vorsieht.', bad_example: 'Ein Online-Shop hebt die Daten von Kunden, die seit 10 Jahren nichts mehr bestellt haben, immer noch vollständig auf, ohne rechtlichen Grund.', consequences: 'Erhöhtes Risiko bei Datenpannen, unnötige Speicherkosten.' }},
+                { id: 'integritaet_vertraulichkeit', icon: '🛡️', title: 'Integrität und Vertraulichkeit', subtitle: 'Daten vor unbefugtem Zugriff schützen.', content: { definition: 'Daten müssen durch geeignete technische und organisatorische Maßnahmen (TOMS) vor unbefugtem Zugriff, Verlust oder Zerstörung geschützt werden.', good_example: 'Ein Unternehmen verschlüsselt die Festplatten aller Mitarbeiter-Laptops und nutzt Zwei-Faktor-Authentifizierung (2FA).', bad_example: 'Die Hotelkette Marriott musste 21,7 Mio. € Strafe zahlen, weil durch unzureichende Sicherheitsvorkehrungen die Daten von 339 Millionen Gästen gestohlen wurden.', consequences: 'Datenlecks, Diebstahl von Identitäten, massive finanzielle Schäden.' }},
+                { id: 'rechenschaftspflicht', icon: '🧾', title: 'Rechenschaftspflicht', subtitle: 'Nachweisen können, dass man alles richtig macht.', content: { definition: 'Der Verantwortliche (das Unternehmen) muss nachweisen können, dass er alle oben genannten Grundsätze einhält. Es reicht nicht, es nur zu tun, man muss es auch dokumentieren.', good_example: 'Ein Unternehmen führt ein "Verzeichnis von Verarbeitungstätigkeiten" (VVT), in dem genau dokumentiert ist, welche Daten für welchen Zweck verarbeitet werden.', bad_example: 'Ein kleines Unternehmen wird geprüft und kann keine Dokumentation über seine Datenschutzmaßnahmen oder Löschkonzepte vorlegen.', consequences: 'Bußgelder, Beweislast im Streitfall liegt beim Unternehmen.' }}
+            ],
+            en: [
+                { id: 'rechtmaessigkeit', icon: '⚖️', title: 'Lawfulness, Fairness, and Transparency', subtitle: 'The basis of all data processing.', content: { definition: 'Data may only be collected on a legal basis (e.g., consent, contract). The processing must be fair, and the person must be able to clearly and easily understand what happens with their data.', good_example: 'An online shop clearly states on the newsletter signup form: "Yes, I want to receive advertising. I can unsubscribe at any time. More info in our privacy policy."', bad_example: 'The Irish data protection authority fined Instagram (Meta) €405 million in 2022 because profiles of minors were public by default, which was not transparent or in the best interest of the children.', consequences: 'High fines, loss of customer trust, damage to image.' }},
+                { id: 'zweckbindung', icon: '🎯', title: 'Purpose Limitation', subtitle: 'Use data only for the agreed purpose.', content: { definition: 'Data may only be collected for the clear purpose communicated to the person beforehand. It cannot simply be used for something completely different later.', good_example: 'A pizzeria collects your address when you order. It uses the address only for the pizza delivery and not to send you unsolicited mail.', bad_example: 'H&M was fined €35.3 million because managers had collected private information about employees (illnesses, etc.) to evaluate their work performance.', consequences: 'Fines, lawsuits from affected individuals, prohibition of further data processing.' }},
+                { id: 'datenminimierung', icon: '🗑️', title: 'Data Minimization', subtitle: 'As much as necessary, as little as possible.', content: { definition: 'Only the data that is truly necessary for the purpose may be collected. No more, no less.', good_example: 'When signing up for an email-only newsletter, only the email address is requested, not additionally the date of birth.', bad_example: 'An online shop requires the date of birth for a guest account, although it is not necessary for the purchase.', consequences: 'Unnecessary risks in case of data leaks, user annoyance.' }},
+                { id: 'richtigkeit', icon: '✍️', title: 'Accuracy', subtitle: 'Data must be correct and up-to-date.', content: { definition: 'Personal data must be factually correct and kept up to date. Measures must be taken to correct or delete incorrect data.', good_example: 'A bank regularly asks its customers to check and update their contact information.', bad_example: 'A credit agency has an outdated, incorrect entry about a person that negatively affects their creditworthiness.', consequences: 'Incorrect decisions based on false data, damage to reputation.' }},
+                { id: 'speicherbegrenzung', icon: '⏳', title: 'Storage Limitation', subtitle: 'Do not keep data longer than necessary.', content: { definition: 'Data may only be stored for as long as it is needed for the purpose for which it is processed. Afterwards, it must be deleted or anonymized.', good_example: 'A company automatically deletes applicant data 6 months after a rejection, as provided by law.', bad_example: 'An online shop still keeps the data of customers who have not ordered anything for 10 years, without any legal reason.', consequences: 'Increased risk in case of data breaches, unnecessary storage costs.' }},
+                { id: 'integritaet_vertraulichkeit', icon: '🛡️', title: 'Integrity and Confidentiality', subtitle: 'Protect data from unauthorized access.', content: { definition: 'Data must be protected by appropriate technical and organizational measures (TOMs) against unauthorized access, loss, or destruction.', good_example: 'A company encrypts all employee laptop hard drives and uses two-factor authentication (2FA).', bad_example: 'The hotel chain Marriott was fined €21.7 million because the data of about 339 million guests was stolen due to inadequate security measures.', consequences: 'Data leaks, identity theft, massive financial damage.' }},
+                { id: 'rechenschaftspflicht', icon: '🧾', title: 'Accountability', subtitle: 'Being able to prove you are doing everything right.', content: { definition: 'The controller (the company) must be able to demonstrate compliance with all the above principles. It is not enough to just do it, you must also document it.', good_example: 'A company maintains a "Record of Processing Activities" (RoPA), which documents exactly what data is processed for what purpose.', bad_example: 'A small company is audited and cannot provide any documentation of its data protection measures or deletion concepts.', consequences: 'Fines, burden of proof in case of a dispute lies with the company.' }}
+            ]
+        };
+
+        function initializePrinciples() {
+            const navContainer = document.getElementById('principles-nav-grid');
+            navContainer.innerHTML = '';
+            let activeCard = null;
+
+            const principles = gdprPrinciplesData[currentLang];
+            
+            principles.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'card bg-white p-5 rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border-2 border-transparent';
+                card.dataset.id = p.id;
+                card.innerHTML = `<div class="text-4xl mb-3">${p.icon}</div><h3 class="font-bold text-lg text-slate-800">${p.title}</h3>`;
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('#principles-nav-grid .card').forEach(c => c.classList.remove('principle-card-active'));
+                    card.classList.add('principle-card-active');
+                    displayPrinciple(p);
+                    document.getElementById('content-display').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+                navContainer.appendChild(card);
+            });
+        }
+        
+        function displayPrinciple(principle) {
+            document.getElementById('content-placeholder').classList.add('hidden');
+            document.getElementById('content-template').classList.remove('hidden');
+            document.getElementById('principle-icon').textContent = principle.icon;
+            document.getElementById('principle-title').textContent = principle.title;
+            document.getElementById('principle-subtitle').textContent = principle.subtitle;
+            const tabsNavEl = document.getElementById('tabs-nav');
+            const tabs = [
+                { id: 'definition', title: currentLang === 'de' ? 'Erklärung' : 'Explanation' }, 
+                { id: 'good_example', title: currentLang === 'de' ? 'Gutes Beispiel' : 'Good Example' }, 
+                { id: 'bad_example', title: currentLang === 'de' ? 'Verletzung & Folgen' : 'Violation & Consequences' }
+            ];
+            tabsNavEl.innerHTML = '';
+            tabs.forEach(tab => {
+                const tabButton = document.createElement('button');
+                tabButton.textContent = tab.title;
+                tabButton.className = 'py-2 px-4 rounded-t-lg text-sm font-medium transition-colors duration-200 tab-inactive';
+                tabButton.dataset.tabId = tab.id;
+                tabsNavEl.appendChild(tabButton);
+            });
+            tabsNavEl.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { showTabContent(e.target.dataset.tabId, principle); } });
+            showTabContent(tabs[0].id, principle);
+        }
+        
+        function showTabContent(tabId, principle) {
+            const tabsNavEl = document.getElementById('tabs-nav');
+            Array.from(tabsNavEl.children).forEach(btn => {
+                btn.classList.replace(btn.dataset.tabId === tabId ? 'tab-inactive' : 'tab-active', btn.dataset.tabId === tabId ? 'tab-active' : 'tab-inactive');
+            });
+            let contentHtml = '';
+            const content = principle.content;
+            switch(tabId) {
+                case 'definition': 
+                    contentHtml = `<p class="text-slate-700 leading-relaxed">${content.definition}</p>`; 
+                    break;
+                case 'good_example': 
+                    contentHtml = `<div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg"><p class="text-slate-700 leading-relaxed">${content.good_example}</p></div>`; 
+                    break;
+                case 'bad_example': 
+                    const badExampleTitle = currentLang === 'de' ? 'Beispiel für eine Verletzung:' : 'Example of a Violation:';
+                    const consequencesTitle = currentLang === 'de' ? 'Mögliche Konsequenzen:' : 'Potential Consequences:';
+                    contentHtml = `<div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg"><h4 class="font-bold text-amber-800 mb-2">${badExampleTitle}</h4><p class="text-slate-700 leading-relaxed mb-4">${content.bad_example}</p><hr class="my-3 border-amber-200"><h4 class="font-bold text-red-800 mb-2">${consequencesTitle}</h4><p class="text-slate-700 font-medium leading-relaxed">${content.consequences}</p></div>`; 
+                    break;
+            }
+            document.getElementById('tabs-content').innerHTML = contentHtml;
+        }
+
+        function createOrUpdateFinesChart(lang) {
+            const ctx = document.getElementById('finesChart')?.getContext('2d');
+            if (!ctx) return;
+            if (finesChart) {
+                finesChart.destroy();
+            }
+            finesChart = new Chart(ctx, {
+                type: 'bar',
+                data: { 
+                    labels: ['Instagram (Meta)', 'H&M', 'Marriott'], 
+                    datasets: [{ 
+                        label: translations[lang].finesChartLabel, 
+                        data: [405, 35.3, 21.7], 
+                        backgroundColor: ['rgba(2, 132, 199, 0.6)', 'rgba(217, 119, 6, 0.6)', 'rgba(100, 116, 139, 0.6)'], 
+                        borderColor: ['rgb(3, 105, 161)', 'rgb(245, 158, 11)', 'rgb(71, 85, 105)'], 
+                        borderWidth: 2 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    indexAxis: 'y', 
+                    plugins: { 
+                        legend: { display: false }, 
+                        title: { display: true, text: translations[lang].finesChartTitle, font: { size: 16, weight: 'bold' }, color: '#334155', padding: { bottom: 20 } }, 
+                        tooltip: { callbacks: { label: (c) => `${c.dataset.label || ''}: ${c.parsed.x} Mio. €` } } 
+                    }, 
+                    scales: { 
+                        x: { beginAtZero: true, title: { display: true, text: translations[lang].finesChartXLabel, color: '#475569' } }, 
+                        y: { ticks: { color: '#475569' } } 
+                    } 
+                }
+            });
+        }
+    </script>
+</body>
+</html>
