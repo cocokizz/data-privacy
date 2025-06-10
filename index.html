@@ -81,6 +81,7 @@
                         <a href="#balance" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navBalance">Balanceakt</a>
                         <a href="#universe" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navUniverse">Daten-Universum</a>
                         <a href="#principles" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navPrinciples">DSGVO-Grundsätze</a>
+                        <a href="#podcast" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navPodcast">Podcast</a>
                         <a href="#solutions" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navSolutions">Lösungen</a>
                     </div>
                     <div class="lang-switcher ml-6 flex items-center p-1 rounded-full bg-slate-200">
@@ -108,6 +109,7 @@
                 <a href="#balance" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navBalance">Balanceakt</a>
                 <a href="#universe" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navUniverse">Daten-Universum</a>
                 <a href="#principles" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navPrinciples">DSGVO-Grundsätze</a>
+                <a href="#podcast" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navPodcast">Podcast</a>
                 <a href="#solutions" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navSolutions">Lösungen</a>
             </div>
         </div>
@@ -325,6 +327,24 @@
             </div>
         </section>
 
+        <!-- Podcast Section -->
+        <section id="podcast" data-section class="py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800 sm:text-4xl" data-translate-key="podcastTitle">Podcast: Datenschutz zum Anhören</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600" data-translate-key="podcastSubtitle">Keine Zeit zum Lesen? Hören Sie sich eine kurze Zusammenfassung der wichtigsten Punkte in unserem fiktiven Podcast an.</p>
+            </div>
+            <div class="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg flex flex-col sm:flex-row items-center gap-8">
+                <div class="text-6xl text-sky-500">🎙️</div>
+                <div class="w-full">
+                    <h3 class="font-bold text-slate-900" data-translate-key="podcastEpisodeTitle">Episode 1: Google und die DSGVO-Waage</h3>
+                    <audio controls class="w-full mt-4">
+                        <source src="./Google and GDPR_ A Data Balancing Act.wav" type="audio/wav">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            </div>
+        </section>
+
         <!-- Solutions -->
         <section id="solutions" data-section class="py-16 bg-sky-800 text-white rounded-2xl shadow-lg mt-20">
             <div class="text-center mb-12 px-4">
@@ -346,13 +366,12 @@
                 </div>
             </div>
         </section>
+
     </main>
 
     <footer class="text-center py-8">
         <p class="text-sm text-slate-500" data-translate-key="footerText">Eine interaktive Aufbereitung basierend auf gängigen Analysen zur DSGVO-Praxis.</p>
     </footer>
-
-    <!-- Modal for conflict card details is no longer needed, integrated into principles section -->
     
     <script>
         const translations = {
@@ -362,6 +381,7 @@
                 navBalance: "Balanceakt",
                 navUniverse: "Daten-Universum",
                 navPrinciples: "DSGVO-Grundsätze",
+                navPodcast: "Podcast",
                 navSolutions: "Lösungen",
                 heroTitle: "Datenkrake oder Datenschutz-Vorreiter?",
                 heroSubtitle: "Wir nutzen täglich die Dienste von Google. Doch was passiert dabei mit unseren Daten? Diese interaktive Analyse beleuchtet den permanenten Balanceakt zwischen Googles Geschäftsmodell und dem europäischen Datenschutzrecht.",
@@ -420,6 +440,9 @@
                 principlesExploreSubtitle: "Klicken Sie auf eine Karte, um Details, Beispiele und mögliche Folgen anzuzeigen.",
                 principlesSelectTitle: "Wählen Sie einen Grundsatz aus",
                 principlesSelectSubtitle: "Klicken Sie oben, um die Details hier zu laden.",
+                podcastTitle: "Podcast: Datenschutz zum Anhören",
+                podcastSubtitle: "Keine Zeit zum Lesen? Hören Sie sich eine kurze Zusammenfassung der wichtigsten Punkte in unserem fiktiven Podcast an.",
+                podcastEpisodeTitle: "Episode 1: Google und die DSGVO-Waage",
                 solutionsTitle: "Wie könnte eine bessere Zukunft aussehen?",
                 solutionsSubtitle: "Es gibt Lösungsansätze auf verschiedenen Ebenen, um die Balance zwischen Innovation und Privatsphäre zu verbessern.",
                 solutionsTechTitle: "Technisch & Design",
@@ -436,6 +459,7 @@
                 navBalance: "Balancing Act",
                 navUniverse: "Data Universe",
                 navPrinciples: "GDPR Principles",
+                navPodcast: "Podcast",
                 navSolutions: "Solutions",
                 heroTitle: "Data Octopus or Privacy Pioneer?",
                 heroSubtitle: "We use Google's services every day. But what happens to our data? This interactive analysis examines the permanent balancing act between Google's business model and European data protection law.",
@@ -494,6 +518,9 @@
                 principlesExploreSubtitle: "Click on a card to view details, examples, and potential consequences.",
                 principlesSelectTitle: "Select a Principle",
                 principlesSelectSubtitle: "Click on a card above to load the details here.",
+                podcastTitle: "Podcast: Data Privacy for Your Ears",
+                podcastSubtitle: "No time to read? Listen to a short summary of the key points in our fictional podcast.",
+                podcastEpisodeTitle: "Episode 1: Google and the GDPR Scale",
                 solutionsTitle: "What could a better future look like?",
                 solutionsSubtitle: "There are solution approaches at various levels to improve the balance between innovation and privacy.",
                 solutionsTechTitle: "Technical & Design",
@@ -595,7 +622,7 @@
                     btn.classList.add('active');
                 }
             });
-            
+
             createOrUpdateFinesChart(lang);
             initializePrinciples(); // Re-initialize to update titles etc.
             
