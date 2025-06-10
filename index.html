@@ -64,6 +64,10 @@
             background-color: #0ea5e9;
             color: white;
         }
+        .aspect-w-16 { position: relative; padding-bottom: 56.25%; }
+        .aspect-h-9 { /* For a 16:9 aspect ratio */ }
+        .aspect-w-16 > iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
     </style>
 </head>
 <body class="bg-slate-50">
@@ -80,6 +84,7 @@
                         <a href="#intro" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navPrivacy">Was ist Datenschutz?</a>
                         <a href="#balance" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navBalance">Balanceakt</a>
                         <a href="#universe" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navUniverse">Daten-Universum</a>
+                        <a href="#video" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navVideo">Video</a>
                         <a href="#principles" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navPrinciples">DSGVO-Grundsätze</a>
                         <a href="#podcast" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navPodcast">Podcast</a>
                         <a href="#solutions" class="nav-link px-3 py-2 text-sm font-medium text-slate-600" data-translate-key="navSolutions">Lösungen</a>
@@ -108,6 +113,7 @@
                  <a href="#intro" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navPrivacy">Was ist Datenschutz?</a>
                 <a href="#balance" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navBalance">Balanceakt</a>
                 <a href="#universe" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navUniverse">Daten-Universum</a>
+                <a href="#video" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navVideo">Video</a>
                 <a href="#principles" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navPrinciples">DSGVO-Grundsätze</a>
                 <a href="#podcast" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navPodcast">Podcast</a>
                 <a href="#solutions" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-slate-600" data-translate-key="navSolutions">Lösungen</a>
@@ -285,6 +291,19 @@
             </div>
         </section>
 
+        <!-- Video Section -->
+        <section id="video" data-section class="py-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800 sm:text-4xl" data-translate-key="videoTitle">Datenschutz visuell erklärt</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600" data-translate-key="videoSubtitle">Eine visuelle Erklärung, um die Kernkonzepte schnell zu erfassen.</p>
+            </div>
+            <div class="max-w-6xl mx-auto bg-black rounded-2xl shadow-lg p-1">
+                <div class="aspect-w-16 aspect-h-9">
+                    <iframe id="youtube-video" class="w-full h-full rounded-xl" src="https://www.youtube.com/embed/HKxcUdULzn4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
         <!-- GDPR Principles Section -->
         <section id="principles" data-section class="py-20 bg-white rounded-2xl shadow-lg">
              <div class="text-center mb-10">
@@ -380,6 +399,7 @@
                 navPrivacy: "Was ist Datenschutz?",
                 navBalance: "Balanceakt",
                 navUniverse: "Daten-Universum",
+                navVideo: "Video",
                 navPrinciples: "DSGVO-Grundsätze",
                 navPodcast: "Podcast",
                 navSolutions: "Lösungen",
@@ -428,6 +448,8 @@
                 serviceMaps: "Standortverlauf, besuchte Orte, Routen, Wohn- & Arbeitsort",
                 serviceGmail: "E-Mail-Inhalte (maschinell), Kontakte, Anhänge",
                 serviceChrome: "Browserverlauf, Cookies, Log-in-Daten (wenn synchronisiert)",
+                videoTitle: "Datenschutz visuell erklärt",
+                videoSubtitle: "Eine visuelle Erklärung, um die Kernkonzepte schnell zu erfassen.",
                 principlesTitle: "Die 7 Grundsätze der DSGVO",
                 principlesSubtitle: "Ein interaktiver Leitfaden zum Verstehen und Anwenden",
                 principlesWhyTitle: "Warum sind diese Grundsätze so wichtig?",
@@ -458,6 +480,7 @@
                 navPrivacy: "What is Data Privacy?",
                 navBalance: "Balancing Act",
                 navUniverse: "Data Universe",
+                navVideo: "Video",
                 navPrinciples: "GDPR Principles",
                 navPodcast: "Podcast",
                 navSolutions: "Solutions",
@@ -506,6 +529,8 @@
                 serviceMaps: "Location history, visited places, routes, home & work address",
                 serviceGmail: "Email content (machine-scanned), contacts, attachments",
                 serviceChrome: "Browsing history, cookies, login data (if synced)",
+                videoTitle: "Data Privacy Explained Visually",
+                videoSubtitle: "A visual explanation to quickly grasp the core concepts.",
                 principlesTitle: "The 7 Principles of GDPR",
                 principlesSubtitle: "An interactive guide to understanding and applying them",
                 principlesWhyTitle: "Why are these principles so important?",
@@ -622,6 +647,13 @@
                     btn.classList.add('active');
                 }
             });
+            
+            // Update Youtube Video source
+            const videoIframe = document.getElementById('youtube-video');
+            if (videoIframe) {
+                const videoId = lang === 'de' ? 'HKxcUdULzn4' : '0oZ6IpiS4U4';
+                videoIframe.src = `https://www.youtube.com/embed/${videoId}`;
+            }
 
             createOrUpdateFinesChart(lang);
             initializePrinciples(); // Re-initialize to update titles etc.
